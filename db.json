@@ -1,0 +1,16 @@
+{
+  "chats": [
+    {
+      "id": "ed8ca3b6-51a3-4c69-ba3a-b4862a213fd5",
+      "message": "hello",
+      "response": "Hello there! How can I help you today?\n",
+      "user_id": 101
+    },
+    {
+      "id": "77f721be-fed4-4f8b-9037-9ec8b5c75da8",
+      "message": "who is prime minister of india",
+      "response": "The current Prime Minister of India is Narendra Modi.\n",
+      "user_id": 101
+    }
+  ]
+}
