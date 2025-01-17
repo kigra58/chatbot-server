@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon src/App.ts",
+    "db":"npx json-server db.json --port 3006",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
