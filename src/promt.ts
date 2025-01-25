@@ -25,6 +25,9 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { config } from "dotenv";
 
 config();
+if(!process.env.GOOGLE_API_KEY) {
+  throw new Error("Please provide GOOGLE_API_KEY in .env file");
+};
 
 const googleAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY as string);
 const geminiModel = googleAI.getGenerativeModel({
@@ -44,17 +47,18 @@ export const generate = async (question: string) => {
 
 export const generateStream = async (question: string) => {
   try {
-    const result = await geminiModel.generateContentStream(question);
+    const {stream} = await geminiModel.generateContentStream(question);
+    return stream;
     
-    let fullResponse = '';
+    // let fullResponse = '';
     
-    for await (const chunk of result.stream) {
-      const chunkText = chunk.text();
-      // console.log(chunkText);
-      fullResponse += chunkText;
-    }
+    // for await (const chunk of result.stream) {
+    //   const chunkText = chunk.text();
+    //   // console.log(chunkText);
+    //   fullResponse += chunkText;
+    // }
     
-    return fullResponse;
+    // return fullResponse;
   } catch (error) {
     console.log("stream error", error);
   }
