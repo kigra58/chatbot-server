@@ -1,12 +1,11 @@
 import express from 'express';
-import { Server as SocketServer } from 'socket.io';
 import http from 'http';
-import { chunkTextBySentence, embeddingByHunggingFace, generate, generateStream, generateTextEmbedding } from './promt'; // Assuming this is your AI model
 import axios from 'axios';
+import { Server as SocketServer } from 'socket.io';
+import {conversationHandler,generateStream} from './promt'; // Assuming this is your AI model
 import { v4 as uuidv4 } from 'uuid';
-import PDFParser from "pdf-parse"
-import fs from "fs";
-import { Conversation, Docs, Session } from './schema/schema';
+
+
 import { conn } from './connetion/connection';
 import { config } from "dotenv";
 
@@ -44,41 +43,7 @@ app.post("/conversation",async (req, res) => {
    try {
     const {message}=req.body;
     if(!message || !message.length) return;
-   
-    const createSession=await Session.create({});
-    if(!createSession || !createSession._id) return;
-    const createConversation=await Conversation.create({
-        session_id:createSession._id,
-        message,
-        role:"USER",
-    });
-    if(!createConversation||!createConversation._id) return;
-
-    const ebmRes=await embeddingByHunggingFace(message);
-    if(!ebmRes||!ebmRes.length) return;
-
-    const vectorSearch=await Docs.aggregate([
-        {
-            $vectorSearch:{
-                index:"default",
-                path:"embedding",
-                queryVector:ebmRes as Array<number>,
-                numCandidates:150,
-                limit:10
-            }
-        },{
-            $project:{
-                _id:0,
-                text:1,
-                score:{
-                    $meta:"vectorSearchScore"
-                }
-            }
-        }
-    ]);
-    
-    const data=await generate(vectorSearch,message);
-    if(!data) return;
+    const data=await conversationHandler(message);
     res.json({"success":true,message:data});
     
    } catch (error) {
