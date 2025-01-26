@@ -1,9 +1,16 @@
 import express from 'express';
 import { Server as SocketServer } from 'socket.io';
 import http from 'http';
-import { generateStream } from './promt'; // Assuming this is your AI model
+import { chunkTextBySentence, embeddingByHunggingFace, generate, generateStream, generateTextEmbedding } from './promt'; // Assuming this is your AI model
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import PDFParser from "pdf-parse"
+import fs from "fs";
+import { Conversation, Docs, Session } from './schema/schema';
+import { conn } from './connetion/connection';
+import { config } from "dotenv";
+
+config();
 
 const app = express();
 const server = http.createServer(app);
@@ -12,6 +19,72 @@ const io = new SocketServer(server, { cors: { origin: '*' } });
 const PORT = process.env.PORT || 3005;
 const DB_PORT = process.env.DB_PORT || 3006;
 app.use(express.json());
+
+conn(process.env.DB as string);
+
+// app.get("/upload",async (req, res) => {
+//     try {        
+//         const data = fs.readFileSync("./src/documents/mypdf1.pdf");
+//         if(!data) return;
+//         const {text} = await PDFParser(data);
+//         if(!text) return;
+//         const chunkRes=await  chunkTextBySentence(text);
+//         if(!chunkRes || !chunkRes.length) return;
+//         for(const ele of chunkRes){
+//          const ebmRes=await embeddingByHunggingFace(ele);
+//          await Docs.create({text:ele,embedding:ebmRes});
+//         }    
+//        res.json({"success":true,message:"File uploaded successfully"});
+//     } catch (error) {
+//        res.json({"success":false,message:"unable to upload file",error});
+//     }
+// });
+
+app.post("/conversation",async (req, res) => {
+   try {
+    const {message}=req.body;
+    if(!message || !message.length) return;
+   
+    const createSession=await Session.create({});
+    if(!createSession || !createSession._id) return;
+    const createConversation=await Conversation.create({
+        session_id:createSession._id,
+        message,
+        role:"USER",
+    });
+    if(!createConversation||!createConversation._id) return;
+
+    const ebmRes=await embeddingByHunggingFace(message);
+    if(!ebmRes||!ebmRes.length) return;
+
+    const vectorSearch=await Docs.aggregate([
+        {
+            $vectorSearch:{
+                index:"default",
+                path:"embedding",
+                queryVector:ebmRes as Array<number>,
+                numCandidates:150,
+                limit:10
+            }
+        },{
+            $project:{
+                _id:0,
+                text:1,
+                score:{
+                    $meta:"vectorSearchScore"
+                }
+            }
+        }
+    ]);
+    
+    const data=await generate(vectorSearch,message);
+    if(!data) return;
+    res.json({"success":true,message:data});
+    
+   } catch (error) {
+     res.json({"success":false,message:"something went wrong",error});
+   }
+});
 
 io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
