@@ -4,8 +4,6 @@ import axios from 'axios';
 import { Server as SocketServer } from 'socket.io';
 import {conversationHandler,generateStream, uploadHandler} from './promt'; // Assuming this is your AI model
 import { v4 as uuidv4 } from 'uuid';
-
-
 import { conn } from './connetion/connection';
 import { config } from "dotenv";
 
@@ -47,7 +45,7 @@ io.on('connection', (socket) => {
 
     socket.on('message', async (args: { userId: number; message: string }) => {
         console.log("User Message", args);
-        if (!args.message || !args.message.length) return;
+        if (!args.message || !args.message.length || args.userId) return;
 
         const chatId = uuidv4();
         const chatObj = { message: args.message, response: '', id: chatId, user_id: args.userId };
@@ -56,7 +54,8 @@ io.on('connection', (socket) => {
         socket.emit('response',chatObj);
 
         try {
-            const stream = await generateStream(args.message); // Get the stream from your AI model
+            // const stream = await generateStream(args.message); // Get the stream from your AI model
+            const stream =await conversationHandler(args.message);
             let fullResponse = '';
             if(!stream)return;
 

@@ -1,10 +1,10 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { config } from "dotenv";
-import { HfInference } from "@huggingface/inference";
 import { Conversation, Docs, Session } from "./schema/schema";
 import PdfParse from "pdf-parse";
 import fs from "fs";
+import { HfInference } from "@huggingface/inference";
 
 config();
 if (!process.env.GOOGLE_API_KEY) {
@@ -40,20 +40,27 @@ export const generate = async (vectorSearch: any[], question: string) => {
   }
 };
 
-export const generateStream = async (question: string) => {
+export const generateStream = async (vectorSearch: any[],question: string) => {
   try {
-    const { stream } = await geminiModel.generateContentStream(question);
+    // const { stream } = await geminiModel.generateContentStream(question);
+    // return stream;
+
+    const prompt = [
+      {
+        role: "system",
+        content:
+          "you are humble AI assistant who can answer for questions asked by users from the given context.",
+      },
+      {
+        role: "user",
+        content: `${vectorSearch.map((item) => item.text + "\n")}
+        \n
+        from the above context, answer the following question ${question}`,
+      },
+    ];
+    const myprompt = JSON.stringify(prompt);
+    const { stream } =  await geminiModel.generateContentStream(myprompt);
     return stream;
-
-    // let fullResponse = '';
-
-    // for await (const chunk of result.stream) {
-    //   const chunkText = chunk.text();
-    //   // console.log(chunkText);
-    //   fullResponse += chunkText;
-    // }
-
-    // return fullResponse;
   } catch (error) {
     console.log("stream error", error);
   }
@@ -113,7 +120,8 @@ export const conversationHandler = async (message: string) => {
       },
     ]);
 
-    const data = await generate(vectorSearch, message);
+    // const data = await generate(vectorSearch, message);
+    const data = await generateStream(vectorSearch, message);
     if (!data) return;
     return data;
   } catch (error) {
@@ -148,6 +156,23 @@ export const embeddingByHunggingFace = async (text: string) => {
   }
 };
 
+export const  createEmbeddingByGoogle= async(sentence:string)=> {
+  try {
+      // Get the embedding model
+      const model = googleAI.getGenerativeModel({ model: "models/embedding-001" });
+
+      // Generate the embedding
+      const {embedding} = await model.embedContent(sentence);
+      return embedding.values;
+
+      // Return the first 5 values of the embedding vector
+      // return embedding.values.slice(0, 5);
+  } catch (error) {
+      console.error("Error creating embedding:", error);
+      throw error;
+  }
+}
+
 
 export const uploadHandler = async () => {
   try {
@@ -156,10 +181,11 @@ export const uploadHandler = async () => {
     const { text } = await PdfParse(data);
     if (!text) return;
     const chunkRes = await chunkTextBySentence(text);
-    console.log("chunkReschunkRes",chunkRes);
+    // console.log("chunkReschunkRes",chunkRes);
     if (!chunkRes || !chunkRes.length) return;
     for (const ele of chunkRes) {
-      const embedding = await embeddingByHunggingFace(ele);
+      // const embedding = await embeddingByHunggingFace(ele);
+      const embedding = await createEmbeddingByGoogle(ele);
       console.log("embedding",embedding);
       await Docs.create({ text: ele, embedding});
     }
