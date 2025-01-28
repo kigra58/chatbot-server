@@ -4,7 +4,7 @@ import { config } from "dotenv";
 import { Conversation, Docs, Session } from "./schema/schema";
 import PdfParse from "pdf-parse";
 import fs from "fs";
-import { HfInference } from "@huggingface/inference";
+
 
 config();
 if (!process.env.GOOGLE_API_KEY) {
@@ -145,17 +145,7 @@ export const chunkTextBySentence = async (
 };
 
 
-export const embeddingByHunggingFace = async (text: string) => {
-  try {
-    const hf = new HfInference(process.env.HF_TOKEN);
-    return await hf.featureExtraction({
-      model: "sentence-transformers/all-MiniLM-L6-v2",
-      inputs: text,
-    });
-  } catch (error) {
-    console.log("Error generating text embedding:", error);
-  }
-};
+
 
 export const  createEmbeddingByGoogle= async(sentence:string)=> {
   try {
