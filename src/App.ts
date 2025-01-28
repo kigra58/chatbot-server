@@ -2,7 +2,7 @@ import express from 'express';
 import http from 'http';
 import axios from 'axios';
 import { Server as SocketServer } from 'socket.io';
-import {conversationHandler,generateStream} from './promt'; // Assuming this is your AI model
+import {conversationHandler,generateStream, uploadHandler} from './promt'; // Assuming this is your AI model
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -21,23 +21,14 @@ app.use(express.json());
 
 conn(process.env.DB as string);
 
-// app.get("/upload",async (req, res) => {
-//     try {        
-//         const data = fs.readFileSync("./src/documents/mypdf1.pdf");
-//         if(!data) return;
-//         const {text} = await PDFParser(data);
-//         if(!text) return;
-//         const chunkRes=await  chunkTextBySentence(text);
-//         if(!chunkRes || !chunkRes.length) return;
-//         for(const ele of chunkRes){
-//          const ebmRes=await embeddingByHunggingFace(ele);
-//          await Docs.create({text:ele,embedding:ebmRes});
-//         }    
-//        res.json({"success":true,message:"File uploaded successfully"});
-//     } catch (error) {
-//        res.json({"success":false,message:"unable to upload file",error});
-//     }
-// });
+app.get("/upload",async (req, res) => {
+    try {        
+      await uploadHandler();
+       res.json({"success":true,message:"File uploaded successfully"});
+    } catch (error) {
+       res.json({"success":false,message:"unable to upload file",error});
+    }
+});
 
 app.post("/conversation",async (req, res) => {
    try {

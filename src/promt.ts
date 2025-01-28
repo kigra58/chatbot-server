@@ -151,14 +151,16 @@ export const embeddingByHunggingFace = async (text: string) => {
 
 export const uploadHandler = async () => {
   try {
-    const data = fs.readFileSync("./src/documents/mypdf1.pdf");
+    const data = fs.readFileSync("./src/documents/story.pdf");
     if (!data) return;
     const { text } = await PdfParse(data);
     if (!text) return;
     const chunkRes = await chunkTextBySentence(text);
+    console.log("chunkReschunkRes",chunkRes);
     if (!chunkRes || !chunkRes.length) return;
     for (const ele of chunkRes) {
       const embedding = await embeddingByHunggingFace(ele);
+      console.log("embedding",embedding);
       await Docs.create({ text: ele, embedding});
     }
   } catch (error) {
