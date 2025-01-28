@@ -96,7 +96,7 @@ export const conversationHandler = async (message: string) => {
     });
     if (!createConversation || !createConversation._id) return;
 
-    const ebmRes = await embeddingByHunggingFace(message);
+    const ebmRes = await createEmbeddingByGoogle(message);
     if (!ebmRes || !ebmRes.length) return;
 
     const vectorSearch = await Docs.aggregate([
@@ -120,8 +120,9 @@ export const conversationHandler = async (message: string) => {
       },
     ]);
 
-    // const data = await generate(vectorSearch, message);
-    const data = await generateStream(vectorSearch, message);
+    const data = await generate(vectorSearch, message);
+    // const data = await generateStream(vectorSearch, message);
+
     if (!data) return;
     return data;
   } catch (error) {

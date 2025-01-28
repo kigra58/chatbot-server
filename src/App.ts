@@ -33,7 +33,7 @@ app.post("/conversation",async (req, res) => {
     const {message}=req.body;
     if(!message || !message.length) return;
     const data=await conversationHandler(message);
-    res.json({"success":true,message:data});
+    res.json({"success":true,data});
     
    } catch (error) {
      res.json({"success":false,message:"something went wrong",error});
@@ -56,12 +56,14 @@ io.on('connection', (socket) => {
         try {
             // const stream = await generateStream(args.message); // Get the stream from your AI model
             const stream =await conversationHandler(args.message);
+            console.log("streamstream",stream);
             let fullResponse = '';
             if(!stream)return;
 
             // Stream the response in chunks
             for await (const chunk of stream) {
-                const chunkText = chunk.text(); // Assuming the chunk has a `text()` method
+                // const chunkText = chunk.text(); // Assuming the chunk has a `text()` method
+                const chunkText = chunk; // Assuming the chunk has a `text()` method
                 fullResponse += chunkText;
 
                 // Emit each chunk to the frontend
