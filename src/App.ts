@@ -2,10 +2,11 @@ import express from 'express';
 import http from 'http';
 import axios from 'axios';
 import { Server as SocketServer } from 'socket.io';
-import {conversationHandler,generateStream, uploadHandler} from './promt'; // Assuming this is your AI model
+import {conversationHandler, uploadHandler} from './promt'; // Assuming this is your AI model
 import { v4 as uuidv4 } from 'uuid';
 import { conn } from './connetion/connection';
 import { config } from "dotenv";
+import statusMonitor  from "express-status-monitor"
 
 config();
 
@@ -18,6 +19,21 @@ const DB_PORT = process.env.DB_PORT || 3006;
 app.use(express.json());
 
 conn(process.env.DB as string);
+
+const monitor = statusMonitor({
+    title: 'My Express App Status', // Title of the monitor page
+    path: '/status', // The endpoint to access the monitor (e.g., your-app/status)
+    // spans: 50, // Number of data points to keep for each metric
+    // Other options are available, check the documentation for details.
+    // Example:
+    // ignore: /^\/healthz$/ // Ignore requests matching this regex
+  });
+
+app.use(monitor);
+app.get('/', (req, res) => {
+    res.send('Hello World!');
+});
+  
 
 app.get("/upload",async (req, res) => {
     try {        
